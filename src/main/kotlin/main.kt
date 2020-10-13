@@ -1,3 +1,4 @@
+import front.Lexer
 import java.io.BufferedReader
 import java.io.File
 
@@ -12,7 +13,7 @@ fun main(args: Array<String>) {
     val fileName = "main.c"
     val inputFile: BufferedReader = File(fileName.inResource()).bufferedReader()
 
-    inputFile.readLines().forEach {
-        println(it)
-    }
+    inputFile.readLines()
+        .let { Lexer.tokenize(it) }
+        .forEach { println(it) }
 }
