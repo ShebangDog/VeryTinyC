@@ -1,4 +1,4 @@
-package front
+package front.lexer
 
 sealed class Token {
     class Number(val value: Int) : Token() {

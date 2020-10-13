@@ -1,4 +1,4 @@
-package front
+package front.lexer
 
 object Lexer {
 
