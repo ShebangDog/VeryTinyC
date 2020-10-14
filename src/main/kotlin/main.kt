@@ -19,7 +19,7 @@ fun main(args: Array<String>) {
         .forEach {
             println(
                 when (it) {
-                    is Either.Left -> it.message
+                    is Either.Left -> it.value.message()
                     is Either.Right -> it.value
                 }
             )

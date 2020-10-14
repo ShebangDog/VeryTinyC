@@ -1,12 +1,12 @@
 package front
 
 sealed class Either<out L, out R> {
-    class Left<L>(val message: L) : Either<L, Nothing>()
+    class Left<L>(val value: L) : Either<L, Nothing>()
     class Right<R>(val value: R) : Either<Nothing, R>()
 }
 
 inline fun <L, R, T> Either<L, R>.map(transform: (R) -> T): Either<L, T> = when (this) {
-    is Either.Left -> Either.Left(message)
+    is Either.Left -> Either.Left(value)
     is Either.Right -> Either.Right(transform(value))
 }
 
