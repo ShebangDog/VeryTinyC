@@ -1,6 +1,8 @@
 package front.lexer
 
 import front.Either
+import front.getOrElse
+import front.map
 
 object Lexer {
 
@@ -29,10 +31,7 @@ object Lexer {
                         else -> errorWhileTokenize(head)
                     }
 
-                    val consumed = when (token) {
-                        is Either.Left -> null
-                        is Either.Right -> token.value?.rawString?.length
-                    }
+                    val consumed = token.map { it?.rawString?.length }.getOrElse(null)
 
                     recurse(
                         inputStringList.drop(consumed ?: 1),
@@ -52,7 +51,7 @@ object Lexer {
     private fun List<String>.toSplitBySingle() = this.joinToString(" ").split("")
 
     private fun errorWhileTokenize(gotString: String) =
-        Either.Left<String>("got $gotString while tokenize".formatError())
+        Either.Left("got $gotString while tokenize".formatError())
 
     private fun String.formatError(): String {
         val tag = "error"
