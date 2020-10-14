@@ -1,26 +1,8 @@
 package front.lexer
 
-import front.Either
+sealed class Token(val rawString: String) {
 
-sealed class Token {
-
-    companion object {
-        fun of(string: String): Either<String, Token?> {
-            if (string.isBlank()) return Either.Right(null)
-            if (Number.isNumber(string)) return Either.Right(Number(string.toInt()))
-            if (Operator.isOperator(string)) return Either.Right(Operator(string))
-
-            return Either.Left("got $string while tokenize".formatError())
-        }
-
-        private fun String.formatError(): String {
-            val tag = "error"
-
-            return "$tag: $this"
-        }
-    }
-
-    class Number(val value: Int) : Token() {
+    class Number(val value: Int) : Token(rawString = value.toString()) {
         companion object {
             val numberList = (0..9).toList().map { it.toString() }
 
@@ -28,7 +10,7 @@ sealed class Token {
         }
     }
 
-    class Operator(val value: String) : Token() {
+    class Operator(val value: String) : Token(rawString = value) {
         companion object {
             val operatorList = listOf("+", "-", "*", "/")
 

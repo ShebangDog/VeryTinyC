@@ -8,10 +8,37 @@ object Lexer {
         fun recurse(inputStringList: List<String>, result: List<Either<String, Token?>>): List<Either<String, Token?>> =
             when (inputStringList.isEmpty()) {
                 true -> result
-                false -> recurse(
-                    inputStringList.drop(1),
-                    result + (Token.of(inputStringList.first()))
-                )
+                false -> {
+                    val head = inputStringList.first()
+
+                    val token = when {
+                        head.isBlank() -> Either.Right<String, Token?>(null)
+                        Token.Operator.isOperator(head) -> Either.Right<String, Token>(Token.Operator(head))
+                        Token.Number.isNumber(head) -> {
+                            inputStringList
+                                .takeWhile { Token.Number.isNumber(it) }
+                                .joinToString("")
+                                .let {
+                                    when {
+                                        it.length > 1 && it.first() == '0' -> errorWhileTokenize(it)
+                                        else -> Either.Right(Token.Number(it.toInt()))
+                                    }
+                                }
+                        }
+
+                        else -> errorWhileTokenize(head)
+                    }
+
+                    val consumed = when (token) {
+                        is Either.Left -> null
+                        is Either.Right -> token.value?.rawString?.length
+                    }
+
+                    recurse(
+                        inputStringList.drop(consumed ?: 1),
+                        result + (token)
+                    )
+                }
             }
 
         return recurse(inputStringList.toSplitBySingle(), emptyList()).mapNotNull {
@@ -23,4 +50,13 @@ object Lexer {
     }
 
     private fun List<String>.toSplitBySingle() = this.joinToString(" ").split("")
+
+    private fun errorWhileTokenize(gotString: String) =
+        Either.Left<String, Token>("got $gotString while tokenize".formatError())
+
+    private fun String.formatError(): String {
+        val tag = "error"
+
+        return "$tag: $this"
+    }
 }
