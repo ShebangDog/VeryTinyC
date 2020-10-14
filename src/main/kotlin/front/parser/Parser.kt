@@ -19,7 +19,7 @@ object Parser {
 
         return when (head) {
             is Token.Number -> {
-                val left = num(head)
+                val left = factor(head)
 
                 if (tokenList.drop(1).isEmpty() || !tokenList[1].isType<Token.Operator>()) left
                 else {
@@ -36,7 +36,7 @@ object Parser {
         }
     }
 
-    private fun num(token: Token) = when (token) {
+    private fun factor(token: Token) = when (token) {
         is Token.Number -> Either.Right(Node.Leaf(Node.NodeValue.Number(token.value)))
         is Token.Operator -> Either.Left(ParseError.NoMatchError(token.rawString))
     }
