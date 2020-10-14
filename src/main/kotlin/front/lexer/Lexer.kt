@@ -1,8 +1,6 @@
 package front.lexer
 
 import front.Either
-import front.getOrElse
-import front.map
 
 object Lexer {
 
@@ -34,7 +32,10 @@ object Lexer {
                         else -> Either.Left(TokenizeError.NoMatchError(head))
                     }
 
-                    val consumed = token.map { it?.rawString?.length }.getOrElse(null)
+                    val consumed = when (token) {
+                        is Either.Left -> token.value.rawString.length
+                        is Either.Right -> token.value?.rawString?.length
+                    }
 
                     recurse(
                         inputStringList.drop(consumed ?: 1),
