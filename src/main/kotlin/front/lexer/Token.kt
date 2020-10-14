@@ -18,6 +18,8 @@ sealed class Token(val rawString: String) {
         }
     }
 
+    inline fun <reified T : Token> isType(): Boolean = this is T
+
     override fun toString() = when (this) {
         is Operator -> value
         is Number -> value.toString()
