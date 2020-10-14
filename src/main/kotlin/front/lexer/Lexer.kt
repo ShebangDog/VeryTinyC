@@ -12,8 +12,8 @@ object Lexer {
                     val head = inputStringList.first()
 
                     val token = when {
-                        head.isBlank() -> Either.Right<String, Token?>(null)
-                        Token.Operator.isOperator(head) -> Either.Right<String, Token>(Token.Operator(head))
+                        head.isBlank() -> Either.Right<Token?>(null)
+                        Token.Operator.isOperator(head) -> Either.Right<Token>(Token.Operator(head))
                         Token.Number.isNumber(head) -> {
                             inputStringList
                                 .takeWhile { Token.Number.isNumber(it) }
@@ -52,7 +52,7 @@ object Lexer {
     private fun List<String>.toSplitBySingle() = this.joinToString(" ").split("")
 
     private fun errorWhileTokenize(gotString: String) =
-        Either.Left<String, Token>("got $gotString while tokenize".formatError())
+        Either.Left<String>("got $gotString while tokenize".formatError())
 
     private fun String.formatError(): String {
         val tag = "error"

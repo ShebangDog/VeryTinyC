@@ -1,6 +1,6 @@
 package front
 
-sealed class Either<L, out R> {
-    class Left<L, R>(val message: L) : Either<L, R>()
-    class Right<L, R>(val value: R) : Either<L, R>()
+sealed class Either<out L, out R> {
+    class Left<L>(val message: L) : Either<L, Nothing>()
+    class Right<R>(val value: R) : Either<Nothing, R>()
 }
