@@ -1,3 +1,4 @@
+import front.Either
 import front.lexer.Lexer
 import java.io.BufferedReader
 import java.io.File
@@ -15,5 +16,12 @@ fun main(args: Array<String>) {
 
     inputFile.readLines()
         .let { Lexer.tokenize(it) }
-        .forEach { println(it) }
+        .forEach {
+            println(
+                when (it) {
+                    is Either.Left -> it.message
+                    is Either.Right -> it.value
+                }
+            )
+        }
 }

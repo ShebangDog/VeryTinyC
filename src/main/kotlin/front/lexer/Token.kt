@@ -1,14 +1,22 @@
 package front.lexer
 
+import front.Either
+
 sealed class Token {
 
     companion object {
-        fun of(string: String): Token? {
-            if (string.isBlank()) return null
-            if (Number.isNumber(string)) return Number(string.toInt())
-            if (Operator.isOperator(string)) return Operator(string)
+        fun of(string: String): Either<String, Token?> {
+            if (string.isBlank()) return Either.Right(null)
+            if (Number.isNumber(string)) return Either.Right(Number(string.toInt()))
+            if (Operator.isOperator(string)) return Either.Right(Operator(string))
 
-            throw Exception()
+            return Either.Left("got $string while tokenize".formatError())
+        }
+
+        private fun String.formatError(): String {
+            val tag = "error"
+
+            return "$tag: $this"
         }
     }
 
