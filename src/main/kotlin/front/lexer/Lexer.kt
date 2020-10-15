@@ -10,41 +10,27 @@ object Lexer {
         fun recurse(
                 inputStringList: List<String>,
                 result: List<Either<TokenizeError, Token>>
-        ): List<Either<TokenizeError, Token>> =
-                when (inputStringList.isEmpty()) {
-                    true -> result
-                    false -> {
-                        val head = inputStringList.first()
+        ): List<Either<TokenizeError, Token>> = when (inputStringList.isEmpty()) {
+            true -> result
+            false -> {
+                val head = inputStringList.first()
 
-                        val token = when {
-                            head.isBlank() -> Either.Right(Token.Space)
-                            Token.Operator.isOperator(head) -> Token.Operator.of(head)
-                            Token.Number.isNumber(head) -> {
-                                inputStringList
-                                        .takeWhile { Token.Number.isNumber(it) }
-                                        .joinToString("")
-                                        .let {
-                                            when {
-                                                (it.length > 1 && it[0] == '0') -> Either.Left(TokenizeError.StartZeroError(it))
-                                                else -> Either.Right(Token.Number(it.toInt()))
-                                            }
-                                        }
-                            }
+                val token = when {
+                    head.isBlank() -> Either.Right(Token.Space)
+                    Token.Operator.isOperator(head) -> Token.Operator.of(head)
+                    Token.Number.isNumber(head) -> Token.Number.of(inputStringList)
 
-                            else -> Either.Left(TokenizeError.NoMatchError(head))
-                        }
-
-                        val consumed = when (token) {
-                            is Either.Left -> token.value.rawString.length
-                            is Either.Right -> token.value.rawString.length
-                        }
-
-                        recurse(
-                                inputStringList.drop(consumed),
-                                result + (token)
-                        )
-                    }
+                    else -> Either.Left(TokenizeError.NoMatchError(head))
                 }
+
+                val consumed = when (token) {
+                    is Either.Left -> token.value.rawString.length
+                    is Either.Right -> token.value.rawString.length
+                }
+
+                recurse(inputStringList.drop(consumed), result + (token))
+            }
+        }
 
         return recurse(inputStringList.toSplitBySingle(), emptyList())
                 .filter { either -> either.map { it.isNotType<Token.Space>() }.getOrElse(true) }

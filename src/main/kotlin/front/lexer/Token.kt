@@ -4,9 +4,19 @@ import front.Either
 
 sealed class Token(val rawString: String) {
 
-    class Number(val value: Int) : Token(rawString = value.toString()) {
+    class Number private constructor(val value: Int) : Token(rawString = value.toString()) {
         companion object {
             val numberList = (0..9).toList().map { it.toString() }
+
+            fun of(stringList: List<String>) = stringList
+                    .takeWhile { Number.isNumber(it) }
+                    .joinToString("")
+                    .let {
+                        when {
+                            (it.length > 1 && it[0] == '0') -> Either.Left(TokenizeError.StartZeroError(it))
+                            else -> Either.Right(Number(it.toInt()))
+                        }
+                    }
 
             fun isNumber(rawString: String): Boolean = numberList.contains(rawString)
         }
