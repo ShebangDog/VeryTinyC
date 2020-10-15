@@ -20,21 +20,21 @@ fun main(args: Array<String>) {
     val inputFile: BufferedReader = File(fileName.inResource()).bufferedReader()
 
     inputFile.readLines()
-        .let { Lexer.tokenize(it) }
+            .let { Lexer.tokenize(it) }
 //        .also { tokenList -> tokenList.forEach(::printEitherToken) }
-        .filterByToken()
+            .filterByToken()
 //        .also { list -> list.forEach { println(it) }; println("") }
-        .let { Parser.parse(it) }
-        .also { println(it.makeString()) }
+            .let { Parser.parse(it) }
+            .also { println(it.makeString()) }
 
 }
 
 private fun printEitherToken(either: Either<TokenizeError, Token>) {
     println(
-        when (either) {
-            is Either.Left -> either.value.message()
-            is Either.Right -> either.value
-        }
+            when (either) {
+                is Either.Left -> either.value.message()
+                is Either.Right -> either.value
+            }
     )
 }
 

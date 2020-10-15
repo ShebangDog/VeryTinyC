@@ -9,34 +9,49 @@ object Parser {
         val head = tokenList.first()
 
         return when (head) {
-            is Token.Number -> expr(tokenList)
+            is Token.Number -> term(tokenList)
             else -> Either.Left(ParseError.NoMatchError(head.rawString))
         }
     }
 
-    private fun expr(tokenList: List<Token>): Either<ParseError, Node> {
+    private fun term(tokenList: List<Token>): Either<ParseError, Node> {
+        fun recurse(tokenList: List<Token>, left: Either<ParseError, Node>): Either<ParseError, Node> {
+            val head = tokenList.firstOrNull() ?: return left
+
+            return when (head) {
+                is Token.Operator -> {
+                    val tail = tokenList.drop(1)
+
+                    val operator = ope(head)
+                    val right = factor(tail.first())
+
+                    val partialTree = Either.flatMap(operator, left, right) { v, l, r ->
+                        Node.Internal(v.value, l, r)
+                    }
+
+                    recurse(tail.drop(1), partialTree)
+                }
+
+                else -> Either.Left(ParseError.NoMatchError(head.rawString))
+            }
+        }
+
         val head = tokenList.first()
 
         return when (head) {
             is Token.Number -> {
-                val left = num(head)
+                val left = factor(head)
+                val tail = tokenList.drop(1)
 
-                if (tokenList.drop(1).isEmpty() || !tokenList[1].isType<Token.Operator>()) left
-                else {
-                    val value = ope(tokenList[1])
-                    val right = expr(tokenList.drop(2))
-
-                    Either.flatMap(value, left, right) { v, l, r ->
-                        Node.Internal(v.value, l, r)
-                    }
-                }
+                if (tail.isEmpty() || !tail.first().isType<Token.Operator>()) left
+                else recurse(tail, left)
             }
 
             else -> Either.Left(ParseError.NoMatchError(head.rawString))
         }
     }
 
-    private fun num(token: Token) = when (token) {
+    private fun factor(token: Token) = when (token) {
         is Token.Number -> Either.Right(Node.Leaf(Node.NodeValue.Number(token.value)))
         is Token.Operator -> Either.Left(ParseError.NoMatchError(token.rawString))
     }
