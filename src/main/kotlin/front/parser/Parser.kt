@@ -9,19 +9,44 @@ object Parser {
         val head = tokenList.first()
 
         return when (head) {
-            is Token.Number -> term(tokenList)
+            is Token.Number -> expr(tokenList)
             else -> Either.Left(ParseError.NoMatchError(head.rawString))
         }
     }
 
-    private fun term(tokenList: List<Token>): Either<ParseError, Node> {
+    private fun expr(tokenList: List<Token>): Either<ParseError, Node> {
         fun recurse(tokenList: List<Token>, left: Either<ParseError, Node>): Either<ParseError, Node> {
             val head = tokenList.firstOrNull() ?: return left
+            val tail = tokenList.drop(1)
 
             return when (head) {
-                is Token.Operator -> {
-                    val tail = tokenList.drop(1)
+                is Token.Operator.Secondary -> {
+                    val operator = ope(head)
+                    val (right, consumedList) = term(tail)
 
+                    val partialTree = Either.flatMap(operator, left, right) { v, l, r ->
+                        Node.Internal(v.value, l, r)
+                    }
+
+                    recurse(consumedList, partialTree)
+                }
+
+                else -> Either.Left(ParseError.NoMatchError(head.rawString))
+            }
+        }
+
+        val (left, consumedList) = term(tokenList)
+
+        return recurse(consumedList, left)
+    }
+
+    private fun term(tokenList: List<Token>): Pair<Either<ParseError, Node>, List<Token>> {
+        fun recurse(tokenList: List<Token>, left: Either<ParseError, Node>): Pair<Either<ParseError, Node>, List<Token>> {
+            val head = tokenList.firstOrNull() ?: return left to tokenList
+            val tail = tokenList.drop(1)
+
+            return when (head) {
+                is Token.Operator.Primary -> {
                     val operator = ope(head)
                     val right = factor(tail.first())
 
@@ -32,22 +57,23 @@ object Parser {
                     recurse(tail.drop(1), partialTree)
                 }
 
-                else -> Either.Left(ParseError.NoMatchError(head.rawString))
+                else -> left to tokenList
             }
         }
 
         val head = tokenList.first()
+        val tail = tokenList.drop(1)
 
         return when (head) {
             is Token.Number -> {
                 val left = factor(head)
-                val tail = tokenList.drop(1)
 
-                if (tail.isEmpty() || !tail.first().isType<Token.Operator>()) left
+                if (tail.isEmpty()) left to tail
+                else if (!tail.first().isType<Token.Operator.Primary>()) left to tail
                 else recurse(tail, left)
             }
 
-            else -> Either.Left(ParseError.NoMatchError(head.rawString))
+            else -> Either.Left(ParseError.NoMatchError(head.rawString)) to tail
         }
     }
 
