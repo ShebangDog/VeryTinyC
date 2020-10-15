@@ -16,13 +16,39 @@ object Parser {
 
     private fun expr(tokenList: List<Token>): Either<ParseError, Node> {
         val head = tokenList.first()
+        val list = listOf("+", "-")
+
+        return when (head) {
+            is Token.Number -> {
+                val left = term(tokenList)
+
+                if (tokenList.drop(1).isEmpty() ||
+                    !tokenList[1].isType<Token.Operator>() || !list.contains(tokenList[1].rawString)
+                ) left else {
+                    val value = ope(tokenList[1])
+                    val right = expr(tokenList.drop(2))
+
+                    Either.flatMap(value, left, right) { v, l, r ->
+                        Node.Internal(v.value, l, r)
+                    }
+                }
+            }
+
+            else -> Either.Left(ParseError.NoMatchError(head.rawString))
+        }
+    }
+
+    private fun term(tokenList: List<Token>): Either<ParseError, Node> {
+        val head = tokenList.first()
+        val list = listOf("*", "/")
 
         return when (head) {
             is Token.Number -> {
                 val left = factor(head)
 
-                if (tokenList.drop(1).isEmpty() || !tokenList[1].isType<Token.Operator>()) left
-                else {
+                if (tokenList.drop(1).isEmpty() ||
+                    (!tokenList[1].isType<Token.Operator>() || !list.contains(tokenList[1].rawString))
+                ) left else {
                     val value = ope(tokenList[1])
                     val right = expr(tokenList.drop(2))
 
