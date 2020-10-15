@@ -1,5 +1,7 @@
 package front.lexer
 
+import front.Either
+
 sealed class Token(val rawString: String) {
 
     class Number(val value: Int) : Token(rawString = value.toString()) {
@@ -10,11 +12,46 @@ sealed class Token(val rawString: String) {
         }
     }
 
-    class Operator(val value: String) : Token(rawString = value) {
+    sealed class Operator(val value: String) : Token(rawString = value) {
+        init {
+            require(isOperator(value))
+        }
+
         companion object {
-            val operatorList = listOf("+", "-", "*", "/")
+            private const val plus = "+"
+            private const val minus = "-"
+            private const val multiple = "*"
+            private const val divide = "/"
+
+            val operatorList = listOf(plus, minus, multiple, divide)
+
+            fun of(value: String): Either<TokenizeError, Operator> = when {
+                Primary.primaryOperatorList.contains(value) -> Either.Right(Primary(value))
+                Secondary.secondaryOperatorList.contains(value) -> Either.Right(Secondary(value))
+                else -> Either.Left(TokenizeError.OperatorError(value))
+            }
 
             fun isOperator(value: String): Boolean = operatorList.contains(value)
+        }
+
+        class Primary(value: String) : Operator(value) {
+            init {
+                require(primaryOperatorList.contains(value))
+            }
+
+            companion object {
+                val primaryOperatorList = listOf(multiple, divide)
+            }
+        }
+
+        class Secondary(value: String) : Operator(value) {
+            init {
+                require(secondaryOperatorList.contains(value))
+            }
+
+            companion object {
+                val secondaryOperatorList = listOf(plus, minus)
+            }
         }
     }
 
