@@ -53,11 +53,11 @@ object Parser {
 
     private fun factor(token: Token) = when (token) {
         is Token.Number -> Either.Right(Node.Leaf(Node.NodeValue.Number(token.value)))
-        is Token.Operator -> Either.Left(ParseError.NoMatchError(token.rawString))
+        else -> Either.Left(ParseError.NoMatchError(token.rawString))
     }
 
     private fun ope(token: Token) = when (token) {
         is Token.Operator -> Either.Right(Node.Leaf(Node.NodeValue.Operator(token.value)))
-        is Token.Number -> Either.Left(ParseError.NoMatchError(token.rawString))
+        else -> Either.Left(ParseError.NoMatchError(token.rawString))
     }
 }

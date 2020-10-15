@@ -16,7 +16,7 @@ fun String.inResource(): String {
 
 
 fun main(args: Array<String>) {
-    val fileName = "main.c"
+    val fileName = "test.c"
     val inputFile: BufferedReader = File(fileName.inResource()).bufferedReader()
 
     inputFile.readLines()

@@ -55,10 +55,15 @@ sealed class Token(val rawString: String) {
         }
     }
 
+    object Space : Token(rawString = " ")
+
     inline fun <reified T : Token> isType(): Boolean = this is T
+
+    inline fun <reified T : Token> isNotType(): Boolean = !isType<T>()
 
     override fun toString() = when (this) {
         is Operator -> value
         is Number -> value.toString()
+        is Space -> this.rawString
     }
 }
