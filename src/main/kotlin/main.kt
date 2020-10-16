@@ -1,4 +1,5 @@
 import front.Either
+import front.emitter.Emitter
 import front.lexer.Lexer
 import front.lexer.Token
 import front.lexer.TokenizeError
@@ -8,16 +9,20 @@ import front.parser.Parser
 import java.io.BufferedReader
 import java.io.File
 
-fun String.inResource(): String {
-    val resourcePath = "./src/main/resources/"
+private fun String.inResource(): String {
+    val resourcePath = "./../../src/main/resources/"
 
     return resourcePath + this
 }
 
+private fun String.toPath() = "./$this"
 
 fun main(args: Array<String>) {
-    val fileName = "expr.c"
-    val inputFile: BufferedReader = File(fileName.inResource()).bufferedReader()
+    val fileName = "expr.y"
+    val filePath = fileName.inResource()
+            .let { args.first().toPath() }
+
+    val inputFile: BufferedReader = File(filePath).bufferedReader()
 
     inputFile.readLines()
             .let { Lexer.tokenize(it) }
@@ -25,7 +30,8 @@ fun main(args: Array<String>) {
             .filterByToken()
 //        .also { list -> list.forEach { println(it) }; println("") }
             .let { Parser.parse(it) }
-            .also { println(it.makeString()) }
+            .makeString()
+            .let { Emitter("out.c").emit(it.split(" ")) }
 
 }
 
