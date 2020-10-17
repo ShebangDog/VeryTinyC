@@ -8,8 +8,8 @@ object Lexer {
 
     fun tokenize(inputStringList: List<String>): List<Either<TokenizeError, Token>> {
         fun recurse(
-                inputStringList: List<String>,
-                result: List<Either<TokenizeError, Token>>
+            inputStringList: List<String>,
+            result: List<Either<TokenizeError, Token>>
         ): List<Either<TokenizeError, Token>> = when (inputStringList.isEmpty()) {
             true -> result
             false -> {
@@ -19,6 +19,7 @@ object Lexer {
                     head.isBlank() -> Either.Right(Token.Space)
                     Token.Operator.isOperator(head) -> Token.Operator.of(head)
                     Token.Number.isNumber(head) -> Token.Number.of(inputStringList)
+                    Token.Reserved.isReserved(head) -> Token.Reserved.of(head)
 
                     else -> Either.Left(TokenizeError.NoMatchError(head))
                 }
@@ -33,7 +34,7 @@ object Lexer {
         }
 
         return recurse(inputStringList.toSplitBySingle(), emptyList())
-                .filter { either -> either.map { it.isNotType<Token.Space>() }.getOrElse(true) }
+            .filter { either -> either.map { it.isNotType<Token.Space>() }.getOrElse(true) }
     }
 
     private fun List<String>.toSplitBySingle() = this.joinToString(" ").split("")

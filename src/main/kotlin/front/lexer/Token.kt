@@ -9,14 +9,14 @@ sealed class Token(val rawString: String) {
             val numberList = (0..9).toList().map { it.toString() }
 
             fun of(stringList: List<String>) = stringList
-                    .takeWhile { Number.isNumber(it) }
-                    .joinToString("")
-                    .let {
-                        when {
-                            (it.length > 1 && it[0] == '0') -> Either.Left(TokenizeError.StartZeroError(it))
-                            else -> Either.Right(Number(it.toInt()))
-                        }
+                .takeWhile { Number.isNumber(it) }
+                .joinToString("")
+                .let {
+                    when {
+                        (it.length > 1 && it[0] == '0') -> Either.Left(TokenizeError.StartZeroError(it))
+                        else -> Either.Right(Number(it.toInt()))
                     }
+                }
 
             fun isNumber(rawString: String): Boolean = numberList.contains(rawString)
         }
@@ -65,6 +65,40 @@ sealed class Token(val rawString: String) {
         }
     }
 
+    sealed class Reserved(val value: String) : Token(rawString = value) {
+        companion object {
+            fun reservedList() = Parentheses.parenthesesList
+
+            fun of(value: String): Either<TokenizeError, Reserved> = when {
+                Parentheses.parenthesesList.contains(value) -> {
+                    val parentheses = if (Parentheses.open == value) Parentheses.Open else Parentheses.Close
+
+                    Either.Right(parentheses)
+                }
+
+                else -> Either.Left(TokenizeError.NoMatchError(value))
+            }
+
+            fun isReserved(value: String): Boolean = Parentheses.parenthesesList.contains(value)
+        }
+
+        sealed class Parentheses(value: String) : Reserved(value) {
+            init {
+                require(parenthesesList.contains(value))
+            }
+
+            companion object {
+                val open = "("
+                val close = ")"
+
+                val parenthesesList = listOf(open, close)
+            }
+
+            object Open : Parentheses(open)
+            object Close : Parentheses(close)
+        }
+    }
+
     object Space : Token(rawString = " ")
 
     inline fun <reified T : Token> isType(): Boolean = this is T
@@ -74,6 +108,7 @@ sealed class Token(val rawString: String) {
     override fun toString() = when (this) {
         is Operator -> value
         is Number -> value.toString()
+        is Reserved -> value
         is Space -> this.rawString
     }
 }
