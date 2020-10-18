@@ -9,39 +9,18 @@ import front.parser.Parser
 import java.io.BufferedReader
 import java.io.File
 
-private fun String.inResource(): String {
-    val resourcePath = "./../../src/main/resources/"
-
-    return resourcePath + this
-}
-
 private fun String.toPath() = "./$this"
 
 fun main(args: Array<String>) {
-    val fileName = "expr.y"
-    val filePath = fileName.inResource()
-            .let { args.first().toPath() }
-
+    val filePath = args.first().toPath()
     val inputFile: BufferedReader = File(filePath).bufferedReader()
 
     inputFile.readLines()
-            .let { Lexer.tokenize(it) }
-//        .also { tokenList -> tokenList.forEach(::printEitherToken) }
-            .filterByToken()
-//        .also { list -> list.forEach { println(it) }; println("") }
-            .let { Parser.parse(it) }
-            .makeString()
-            .let { Emitter("out.c").emit(it.split(" ")) }
-
-}
-
-private fun printEitherToken(either: Either<TokenizeError, Token>) {
-    println(
-            when (either) {
-                is Either.Left -> either.value.message()
-                is Either.Right -> either.value
-            }
-    )
+        .let { Lexer.tokenize(it) }
+        .filterByToken()
+        .let { Parser.parse(it) }
+        .makeString()
+        .let { Emitter().emit(it.split(" ")) }
 }
 
 private fun List<Either<TokenizeError, Token>>.filterByToken(): List<Token> = this.mapNotNull {

@@ -3,7 +3,7 @@ package front.emitter
 import front.lexer.Token
 import java.io.File
 
-class Emitter(private val out: String) {
+class Emitter(private val out: String = "out.c") {
 
     fun emit(stringList: List<String>) {
         fun recurse(stringList: List<String>, result: String = ""): String = when {
@@ -11,7 +11,7 @@ class Emitter(private val out: String) {
             else -> {
                 val head = stringList.first()
                 recurse(stringList.drop(1), result + when {
-                    Token.Number.isNumber(head) -> push(head)
+                    Token.Number.isNumber(head[0].toString()) -> push(head)
                     Token.Operator.isOperator(head) -> calculate(head)
                     else -> ""
                 })
@@ -43,8 +43,8 @@ class Emitter(private val out: String) {
 
     private val programHead = "#include <stdio.h>\n" +
             "\n" +
-            "int MAXSIZE = 8;\n" +
-            "int stack[8];\n" +
+            "int MAXSIZE = 32;\n" +
+            "int stack[32];\n" +
             "int top = -1;\n" +
             "int left = 0;\n" +
             "int right = 0;\n" +

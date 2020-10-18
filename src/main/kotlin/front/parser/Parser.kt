@@ -10,12 +10,16 @@ object Parser {
 
         return when (head) {
             is Token.Number -> expr(tokenList).first
+            is Token.Reserved.Parentheses.Open -> expr(tokenList).first
             else -> Either.Left(ParseError.NoMatchError(head.rawString))
         }
     }
 
     private fun expr(tokenList: List<Token>): Pair<Either<ParseError, Node>, List<Token>> {
-        fun recurse(tokenList: List<Token>, left: Either<ParseError, Node>): Pair<Either<ParseError, Node>, List<Token>> {
+        fun recurse(
+            tokenList: List<Token>,
+            left: Either<ParseError, Node>
+        ): Pair<Either<ParseError, Node>, List<Token>> {
             val head = tokenList.firstOrNull() ?: return left to tokenList
             val tail = tokenList.drop(1)
 
@@ -31,13 +35,25 @@ object Parser {
                     recurse(consumedList, partialTree)
                 }
 
-                else -> Either.Left(ParseError.NoMatchError(head.rawString))
+                is Token.Reserved.Parentheses.Close -> left to tokenList
+
+                else -> Either.Left(ParseError.NoMatchError(head.rawString)) to tokenList
             }
         }
 
-        val (left, consumedList) = term(tokenList)
+        return when (val head = tokenList.first()) {
+            is Token.Number -> {
+                val (left, consumedList) = term(tokenList)
+                recurse(consumedList, left)
+            }
 
-        return recurse(consumedList, left)
+            is Token.Reserved.Parentheses.Open -> {
+                val (left, consumedList) = term(tokenList)
+                recurse(consumedList, left)
+            }
+
+            else -> Either.Left(ParseError.NoMatchError(head.rawString)) to tokenList
+        }
     }
 
     private fun term(tokenList: List<Token>): Pair<Either<ParseError, Node>, List<Token>> {
@@ -76,11 +92,15 @@ object Parser {
                 else recurse(consumed, left)
             }
 
+            is Token.Reserved.Parentheses.Open -> {
+                val (left, consumed) = factor(tokenList)
+                recurse(consumed, left)
+            }
+
             else -> Either.Left(ParseError.NoMatchError(head.rawString)) to tail
         }
     }
 
-    //factor :: digit | '(' expr ')'
     private fun factor(tokenList: List<Token>): Pair<Either<ParseError, Node>, List<Token>> {
         val head = tokenList.first()
         val tail = tokenList.drop(1)
@@ -88,11 +108,11 @@ object Parser {
         return when (head) {
             is Token.Number -> digit(head) to tail
             is Token.Reserved.Parentheses.Open -> {
-                val open = tail.first()
-                val (internalExpr, consumed) = expr(tail)
+                val (internalExpr, consumedTail) = expr(tail)
 
-                if (consumed.first().isType<Token.Reserved.Parentheses.Close>()) internalExpr to consumed.drop(1)
-                else Either.Left(ParseError.NoMatchError(head.rawString)) to consumed
+                if (consumedTail.first().isType<Token.Reserved.Parentheses.Close>())
+                    internalExpr to consumedTail.drop(1)
+                else Either.Left(ParseError.NoMatchError(consumedTail.first().rawString)) to consumedTail
             }
 
             else -> Either.Left(ParseError.NoMatchError(head.rawString)) to tokenList
@@ -108,5 +128,4 @@ object Parser {
         is Token.Operator -> Either.Right(Node.Leaf(Node.NodeValue.Operator(token.value)))
         else -> Either.Left(ParseError.NoMatchError(token.rawString))
     }
-}
 }
