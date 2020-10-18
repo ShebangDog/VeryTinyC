@@ -106,7 +106,7 @@ object Parser {
         val tail = tokenList.drop(1)
 
         return when (head) {
-            is Token.Number -> digit(head) to tail
+            is Token.Number -> number(head) to tail
             is Token.Reserved.Parentheses.Open -> {
                 val (internalExpr, consumedTail) = expr(tail)
 
@@ -119,7 +119,7 @@ object Parser {
         }
     }
 
-    private fun digit(token: Token) = when (token) {
+    private fun number(token: Token) = when (token) {
         is Token.Number -> Either.Right(Node.Leaf(Node.NodeValue.Number(token.value)))
         else -> Either.Left(ParseError.NoMatchError(token.rawString))
     }
