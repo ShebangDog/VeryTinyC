@@ -67,7 +67,7 @@ sealed class Token(val rawString: String) {
 
     sealed class Reserved(val value: String) : Token(rawString = value) {
         companion object {
-            fun reservedList() = Parentheses.parenthesesList
+            private fun reservedList() = Parentheses.parenthesesList
 
             fun of(value: String): Either<TokenizeError, Reserved> = when {
                 Parentheses.parenthesesList.contains(value) -> {
@@ -79,7 +79,7 @@ sealed class Token(val rawString: String) {
                 else -> Either.Left(TokenizeError.NoMatchError(value))
             }
 
-            fun isReserved(value: String): Boolean = Parentheses.parenthesesList.contains(value)
+            fun isReserved(value: String): Boolean = reservedList().contains(value)
         }
 
         sealed class Parentheses(value: String) : Reserved(value) {
