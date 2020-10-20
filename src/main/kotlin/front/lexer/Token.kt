@@ -67,19 +67,35 @@ sealed class Token(val rawString: String) {
 
     sealed class Reserved(val value: String) : Token(rawString = value) {
         companion object {
-            private fun reservedList() = Parentheses.parenthesesList
+            private fun reservedList() = Parentheses.parenthesesList + Type.typeNameList
 
-            fun of(value: String): Either<TokenizeError, Reserved> = when {
-                isReserved(value) -> {
-                    val parentheses = if (Parentheses.open == value) Parentheses.Open else Parentheses.Close
+            fun of(stringList: List<String>): Either<TokenizeError, Reserved> {
+                val value = stringList
+                    .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
+                    .joinToString("")
 
-                    Either.Right(parentheses)
+                return when {
+                    isReserved(value) -> {
+                        when {
+                            Parentheses.parenthesesList.contains(value) -> Parentheses.of(value)
+
+                            Type.typeNameList.contains(value) -> Type.of(value)
+
+                            else -> Either.Left(TokenizeError.NoMatchError(value))
+                        }
+                    }
+
+                    else -> Either.Left(TokenizeError.NoMatchError(value))
                 }
-
-                else -> Either.Left(TokenizeError.NoMatchError(value))
             }
 
-            fun isReserved(value: String): Boolean = reservedList().contains(value)
+            fun isReserved(stringList: List<String>): Boolean = reservedList().contains(
+                stringList
+                    .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
+                    .joinToString("")
+            )
+
+            fun isReserved(string: String): Boolean = isReserved(string.split("").filter { it != "" })
         }
 
         sealed class Parentheses(value: String) : Reserved(value) {
@@ -92,10 +108,50 @@ sealed class Token(val rawString: String) {
                 val close = ")"
 
                 val parenthesesList = listOf(open, close)
+
+                fun of(value: String) = when (value) {
+                    open -> Either.Right(Open)
+                    close -> Either.Right(Close)
+                    else -> Either.Left(TokenizeError.NoMatchError(value))
+                }
             }
 
             object Open : Parentheses(open)
             object Close : Parentheses(close)
+        }
+
+        sealed class Type(value: String) : Reserved(value) {
+            init {
+                require(Companion.isType(value))
+            }
+
+            companion object {
+                const val integer = "int"
+
+                val typeNameList = listOf(integer)
+
+                fun of(stringList: List<String>): Either<TokenizeError, Reserved> {
+                    val typeName = stringList
+                        .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
+                        .joinToString("")
+
+                    if (!isType(typeName)) return Either.Left(TokenizeError.NoMatchError(typeName))
+
+                    return if (typeName == integer) Either.Right(Integer)
+                    else Either.Left(TokenizeError.NoMatchError(typeName))
+                }
+
+                fun of(typeName: String) = of(typeName.split("").filter { it != "" })
+
+                fun isType(stringList: List<String>) = stringList
+                    .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
+                    .joinToString("")
+                    .let { typeNameList.contains(it) }
+
+                private fun isType(typeName: String) = typeNameList.contains(typeName)
+            }
+
+            object Integer : Type(integer)
         }
     }
 
@@ -106,17 +162,17 @@ sealed class Token(val rawString: String) {
 
         companion object {
             fun of(stringList: List<String>): Either<TokenizeError, Id> {
-                if (!isId(stringList)) {
+                val idName = stringList
+                    .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
+                    .joinToString("")
+
+                if (!isId(idName)) {
                     val head = stringList.first()
                     return when {
                         head.first().isLetter() -> Either.Left(TokenizeError.ReservedError(head))
                         else -> Either.Left(TokenizeError.StartNumberError(head))
                     }
                 }
-
-                val idName = stringList
-                    .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
-                    .joinToString("")
 
                 return if (Reserved.isReserved(idName)) Either.Left(TokenizeError.ReservedError(idName))
                 else Either.Right(Id(idName))

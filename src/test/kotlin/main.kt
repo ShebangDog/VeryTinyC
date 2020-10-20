@@ -22,6 +22,7 @@ fun main() {
             readLines
                 .mapIndexed { index, line -> line + if (index == readLines.size - 1) "" else "\n" }
                 .let { Lexer.tokenize(it).filterByToken().trimNewline() }
+//                .also { list -> list.forEach { println(it.type()) } }
                 .let { Parser.parse(it) }
                 .run { println(makeString()) }
         }
@@ -49,6 +50,15 @@ private fun Tokenized.make(): String = when (this) {
 private fun Either<ParseError, Node>.makeString() = when (this) {
     is Either.Left -> value.message()
     is Either.Right -> value.makeString(Node.OrderType.PostOrder)
+}
+
+private fun Token.type() = "type: " + when (this) {
+    is Token.Operator -> "operator"
+    is Token.Number -> "number"
+    is Token.Reserved -> "reserved"
+    is Token.Id -> "id"
+    is Token.Reserved.Type -> this.value
+    else -> "unknown"
 }
 
 private fun String.toPath() = "./src/test/resources/$this"
