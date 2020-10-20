@@ -23,8 +23,8 @@ fun main() {
                 .mapIndexed { index, line -> line + if (index == readLines.size - 1) "" else "\n" }
                 .let { Lexer.tokenize(it) }
                 .filterByToken()
-                .dropWhile { it.isType<Token.NewLine>() }
-                .dropLastWhile { it.isType<Token.NewLine>() }
+                .dropWhile { it.isType<Token.Newline>() }
+                .dropLastWhile { it.isType<Token.Newline>() }
                 .let { Parser.parse(it) }
                 .run { println(makeString()) }
         }

@@ -16,7 +16,7 @@ object Lexer {
                 val head = inputStringList.first()
 
                 val token = when {
-                    head.isNewLine() -> Either.Right(Token.NewLine)
+                    head.isNewline() -> Either.Right(Token.Newline)
                     head.isWhiteSpace() -> Either.Right(Token.WhiteSpace)
                     Token.Operator.isOperator(head) -> Token.Operator.of(head)
                     Token.Number.isNumber(head) -> Token.Number.of(inputStringList)
@@ -40,7 +40,7 @@ object Lexer {
 
     private fun List<String>.toSplitBySingle() = this.joinToString(" ").split("")
 
-    private fun String.isNewLine() = this == "\n"
+    private fun String.isNewline() = this == "\n"
 
-    private fun String.isWhiteSpace() = !this.isNewLine() && this.isBlank()
+    private fun String.isWhiteSpace() = !this.isNewline() && this.isBlank()
 }

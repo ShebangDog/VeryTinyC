@@ -37,7 +37,7 @@ object Parser {
 
                 is Token.Reserved.Parentheses.Close -> left to tokenList
 
-                is Token.NewLine -> recurse(newLine(tokenList), left)
+                is Token.Newline -> recurse(newLine(tokenList), left)
 
                 else -> Either.Left(ParseError.NoMatchError(head.rawString)) to tokenList
             }
@@ -132,5 +132,5 @@ object Parser {
         else -> Either.Left(ParseError.NoMatchError(token.rawString))
     }
 
-    private fun newLine(tokenList: List<Token>) = tokenList.dropWhile { it.isType<Token.NewLine>() }
+    private fun newLine(tokenList: List<Token>) = tokenList.dropWhile { it.isType<Token.Newline>() }
 }
