@@ -26,7 +26,7 @@ object Parser {
             return when (head) {
                 is Token.Operator.Secondary -> {
                     val operator = ope(head)
-                    val (right, consumedList) = term(tail)
+                    val (right, consumedList) = term(newLine(tail))
 
                     val partialTree = Either.flatMap(operator, left, right) { v, l, r ->
                         Node.Internal(v.value, l, r)
@@ -36,6 +36,8 @@ object Parser {
                 }
 
                 is Token.Reserved.Parentheses.Close -> left to tokenList
+
+                is Token.NewLine -> recurse(newLine(tokenList), left)
 
                 else -> Either.Left(ParseError.NoMatchError(head.rawString)) to tokenList
             }
@@ -48,7 +50,7 @@ object Parser {
             }
 
             is Token.Reserved.Parentheses.Open -> {
-                val (left, consumedList) = term(tokenList)
+                val (left, consumedList) = term(newLine(tokenList))
                 recurse(consumedList, left)
             }
 
@@ -67,7 +69,7 @@ object Parser {
             return when (head) {
                 is Token.Operator.Primary -> {
                     val operator = ope(head)
-                    val (right, consumed) = factor(tail)
+                    val (right, consumed) = factor(newLine(tail))
 
                     val partialTree = Either.flatMap(operator, left, right) { v, l, r ->
                         Node.Internal(v.value, l, r)
@@ -93,11 +95,11 @@ object Parser {
             }
 
             is Token.Reserved.Parentheses.Open -> {
-                val (left, consumed) = factor(tokenList)
+                val (left, consumed) = factor(newLine(tokenList))
                 recurse(consumed, left)
             }
 
-            else -> Either.Left(ParseError.NoMatchError(head.rawString)) to tail
+            else -> Either.Left(ParseError.NoMatchError(head.rawString)) to tokenList
         }
     }
 
@@ -108,11 +110,12 @@ object Parser {
         return when (head) {
             is Token.Number -> number(head) to tail
             is Token.Reserved.Parentheses.Open -> {
-                val (internalExpr, consumedTail) = expr(tail)
+                val (internalExpr, consumedTail) = expr(newLine(tail))
+                val consumedExprHead = consumedTail.first()
 
-                if (consumedTail.first().isType<Token.Reserved.Parentheses.Close>())
-                    internalExpr to consumedTail.drop(1)
-                else Either.Left(ParseError.NoMatchError(consumedTail.first().rawString)) to consumedTail
+                if (consumedExprHead.isType<Token.Reserved.Parentheses.Close>())
+                    internalExpr to newLine(consumedTail.drop(1))
+                else Either.Left(ParseError.NoMatchError(consumedExprHead.rawString)) to consumedTail
             }
 
             else -> Either.Left(ParseError.NoMatchError(head.rawString)) to tokenList
@@ -128,4 +131,6 @@ object Parser {
         is Token.Operator -> Either.Right(Node.Leaf(Node.NodeValue.Operator(token.value)))
         else -> Either.Left(ParseError.NoMatchError(token.rawString))
     }
+
+    private fun newLine(tokenList: List<Token>) = tokenList.dropWhile { it.isType<Token.NewLine>() }
 }
