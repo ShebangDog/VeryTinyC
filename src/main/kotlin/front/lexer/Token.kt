@@ -70,7 +70,7 @@ sealed class Token(val rawString: String) {
             private fun reservedList() = Parentheses.parenthesesList
 
             fun of(value: String): Either<TokenizeError, Reserved> = when {
-                Parentheses.parenthesesList.contains(value) -> {
+                isReserved(value) -> {
                     val parentheses = if (Parentheses.open == value) Parentheses.Open else Parentheses.Close
 
                     Either.Right(parentheses)
