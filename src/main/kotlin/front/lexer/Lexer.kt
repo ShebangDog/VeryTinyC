@@ -21,6 +21,7 @@ object Lexer {
                     Token.Operator.isOperator(head) -> Token.Operator.of(head)
                     Token.Number.isNumber(head) -> Token.Number.of(inputStringList)
                     Token.Reserved.isReserved(head) -> Token.Reserved.of(head)
+                    Token.Id.isId(head) -> Token.Id.of(inputStringList)
 
                     else -> Either.Left(TokenizeError.NoMatchError(head))
                 }

@@ -99,7 +99,23 @@ sealed class Token(val rawString: String) {
         }
     }
 
-    object WhiteSpace : Token(rawString = " ")
+    class Id(val value: String) : Token(rawString = value) {
+        companion object {
+            fun of(stringList: List<String>): Either<TokenizeError, Id> {
+                val head = stringList.first()
+                if (!isId(head)) return Either.Left(TokenizeError.StartNumberError(head))
+
+                val idName = stringList
+                    .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
+                    .joinToString("")
+
+                return if (Reserved.isReserved(idName)) Either.Left(TokenizeError.ReservedError(idName))
+                else Either.Right(Id(idName))
+            }
+
+            fun isId(rawString: String) = rawString.first().isLetter()
+        }
+    }
 
     object WhiteSpace : Token(rawString = " ") {
         fun isWhiteSpace(value: String) = !Newline.isNewline(value) && value.isBlank()
@@ -114,10 +130,13 @@ sealed class Token(val rawString: String) {
     inline fun <reified T : Token> isNotType(): Boolean = !isType<T>()
 
     override fun toString() = when (this) {
-        is Operator -> value
-        is Number -> value.toString()
-        is Reserved -> value
         is WhiteSpace -> this.rawString
         is Newline -> this.rawString
+
+        is Operator -> value
+        is Reserved -> value
+
+        is Id -> value
+        is Number -> value.toString()
     }
 }
