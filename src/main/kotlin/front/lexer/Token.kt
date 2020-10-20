@@ -101,7 +101,13 @@ sealed class Token(val rawString: String) {
 
     object WhiteSpace : Token(rawString = " ")
 
-    object Newline : Token(rawString = "\n")
+    object WhiteSpace : Token(rawString = " ") {
+        fun isWhiteSpace(value: String) = !Newline.isNewline(value) && value.isBlank()
+    }
+
+    object Newline : Token(rawString = "\n") {
+        fun isNewline(value: String) = value == "\n"
+    }
 
     inline fun <reified T : Token> isType(): Boolean = this is T
 
