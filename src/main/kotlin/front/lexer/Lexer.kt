@@ -17,7 +17,7 @@ object Lexer {
 
                 val token = when {
                     head.isNewLine() -> Either.Right(Token.NewLine)
-                    head.isWhiteSpace() -> Either.Right(Token.Space)
+                    head.isWhiteSpace() -> Either.Right(Token.WhiteSpace)
                     Token.Operator.isOperator(head) -> Token.Operator.of(head)
                     Token.Number.isNumber(head) -> Token.Number.of(inputStringList)
                     Token.Reserved.isReserved(head) -> Token.Reserved.of(head)
@@ -35,7 +35,7 @@ object Lexer {
         }
 
         return recurse(inputStringList.toSplitBySingle(), emptyList())
-            .filter { either -> either.map { it.isNotType<Token.Space>() }.getOrElse(true) }
+            .filter { either -> either.map { it.isNotType<Token.WhiteSpace>() }.getOrElse(true) }
     }
 
     private fun List<String>.toSplitBySingle() = this.joinToString(" ").split("")

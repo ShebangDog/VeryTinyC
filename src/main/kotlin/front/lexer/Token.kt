@@ -99,7 +99,7 @@ sealed class Token(val rawString: String) {
         }
     }
 
-    object Space : Token(rawString = " ")
+    object WhiteSpace : Token(rawString = " ")
 
     object NewLine : Token(rawString = "\n")
 
@@ -111,7 +111,7 @@ sealed class Token(val rawString: String) {
         is Operator -> value
         is Number -> value.toString()
         is Reserved -> value
-        is Space -> this.rawString
+        is WhiteSpace -> this.rawString
         is NewLine -> this.rawString
     }
 }
