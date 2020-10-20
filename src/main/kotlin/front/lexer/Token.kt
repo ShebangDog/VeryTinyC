@@ -100,10 +100,19 @@ sealed class Token(val rawString: String) {
     }
 
     class Id(val value: String) : Token(rawString = value) {
+        init {
+            require(isId(value))
+        }
+
         companion object {
             fun of(stringList: List<String>): Either<TokenizeError, Id> {
-                val head = stringList.first()
-                if (!isId(head)) return Either.Left(TokenizeError.StartNumberError(head))
+                if (!isId(stringList)) {
+                    val head = stringList.first()
+                    return when {
+                        head.first().isLetter() -> Either.Left(TokenizeError.ReservedError(head))
+                        else -> Either.Left(TokenizeError.StartNumberError(head))
+                    }
+                }
 
                 val idName = stringList
                     .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
@@ -113,7 +122,20 @@ sealed class Token(val rawString: String) {
                 else Either.Right(Id(idName))
             }
 
-            fun isId(rawString: String) = rawString.first().isLetter()
+            fun isId(stringList: List<String>): Boolean {
+                val head = stringList.first()
+                if (head.firstOrNull()?.isLetter() != true) return false
+
+                val idName = stringList
+                    .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
+                    .joinToString("")
+
+                return !Reserved.isReserved(idName)
+            }
+
+            private fun isId(idName: String): Boolean = isId(idName.split("")
+                .filter { it != "" }
+            )
         }
     }
 
