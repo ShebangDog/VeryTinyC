@@ -21,14 +21,18 @@ fun main() {
 
             readLines
                 .mapIndexed { index, line -> line + if (index == readLines.size - 1) "" else "\n" }
-                .let { Lexer.tokenize(it) }
-                .filterByToken()
-                .dropWhile { it.isType<Token.Newline>() }
-                .dropLastWhile { it.isType<Token.Newline>() }
+                .let { Lexer.tokenize(it).filterByToken().trimNewline() }
                 .let { Parser.parse(it) }
                 .run { println(makeString()) }
         }
 }
+
+private fun List<Token>.trimNewline(): List<Token> {
+    val predicate: (Token) -> Boolean = { it.isType<Token.Newline>() }
+
+    return this.dropLastWhile(predicate).dropWhile(predicate)
+}
+
 
 private fun List<Either<TokenizeError, Token>>.filterByToken(): List<Token> = this.mapNotNull {
     when (it) {
