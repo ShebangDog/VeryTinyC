@@ -101,6 +101,8 @@ sealed class Token(val rawString: String) {
 
     object Space : Token(rawString = " ")
 
+    object NewLine : Token(rawString = "\n")
+
     inline fun <reified T : Token> isType(): Boolean = this is T
 
     inline fun <reified T : Token> isNotType(): Boolean = !isType<T>()
@@ -110,5 +112,6 @@ sealed class Token(val rawString: String) {
         is Number -> value.toString()
         is Reserved -> value
         is Space -> this.rawString
+        is NewLine -> this.rawString
     }
 }
