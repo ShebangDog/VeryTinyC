@@ -1,16 +1,18 @@
 package front.lexer
 
 import front.Either
+import util.makeString
+import util.toCharList
 
 sealed class Token(val rawString: String) {
 
     class Number private constructor(val value: Int) : Token(rawString = value.toString()) {
         companion object {
-            val numberList = (0..9).toList().map { it.toString() }
+            private val numberList = (0..9).toList().joinToString("") { it.toString() }.toCharList()
 
-            fun of(stringList: List<String>) = stringList
-                .takeWhile { Number.isNumber(it) }
-                .joinToString("")
+            fun of(charList: List<Char>) = charList
+                .takeWhile { isNumber(it) }
+                .makeString()
                 .let {
                     when {
                         (it.length > 1 && it[0] == '0') -> Either.Left(TokenizeError.StartZeroError(it))
@@ -18,13 +20,13 @@ sealed class Token(val rawString: String) {
                     }
                 }
 
-            fun isNumber(rawString: String): Boolean = numberList.contains(rawString)
+            fun isNumber(char: Char): Boolean = numberList.contains(char)
         }
     }
 
     sealed class Operator(val value: String) : Token(rawString = value) {
         init {
-            require(isOperator(value))
+            require(isOperator(value.toCharList()))
         }
 
         companion object {
@@ -32,16 +34,48 @@ sealed class Token(val rawString: String) {
             private const val minus = "-"
             private const val multiple = "*"
             private const val divide = "/"
+            private const val assign = "="
+            private const val increment = "++"
 
-            val operatorList = listOf(plus, minus, multiple, divide)
+            val operatorList = listOf(plus, minus, multiple, divide, assign, increment)
 
-            fun of(value: String): Either<TokenizeError, Operator> = when {
-                Primary.primaryOperatorList.contains(value) -> Either.Right(Primary(value))
-                Secondary.secondaryOperatorList.contains(value) -> Either.Right(Secondary(value))
-                else -> Either.Left(TokenizeError.OperatorError(value))
+            fun of(charList: List<Char>): Either<TokenizeError, Operator> {
+                fun recurse(string: String): String = when {
+                    string.isEmpty() -> string
+                    else -> {
+                        if (operatorList.contains(string)) string
+                        else recurse(string.dropLast(1))
+                    }
+                }
+
+                val value = charList
+                    .take(operatorList.maxOf { it.length })
+                    .makeString()
+                    .let { recurse(it) }
+
+                return when {
+                    Primary.primaryOperatorList.contains(value) -> Either.Right(Primary(value))
+                    Secondary.secondaryOperatorList.contains(value) -> Either.Right(Secondary(value))
+                    Tertiary.tertiaryOperatorList.contains(value) -> Either.Right(Tertiary(value))
+                    else -> Either.Left(TokenizeError.OperatorError(value))
+                }
             }
 
-            fun isOperator(value: String): Boolean = operatorList.contains(value)
+            fun isOperator(charList: List<Char>): Boolean {
+                fun recurse(string: String): Boolean = when {
+                    string.isEmpty() -> false
+                    else -> {
+                        if (operatorList.contains(string)) true
+                        else recurse(string.dropLast(1))
+                    }
+                }
+
+                val string = charList
+                    .take(operatorList.maxOf { it.length })
+                    .makeString()
+
+                return recurse(string)
+            }
         }
 
         class Primary(value: String) : Operator(value) {
@@ -63,23 +97,42 @@ sealed class Token(val rawString: String) {
                 val secondaryOperatorList = listOf(plus, minus)
             }
         }
+
+        class Tertiary(value: String) : Operator(value) {
+            init {
+                require(tertiaryOperatorList.contains(value))
+            }
+
+            companion object {
+                val tertiaryOperatorList = listOf(assign, increment)
+            }
+        }
     }
 
     sealed class Reserved(val value: String) : Token(rawString = value) {
         companion object {
             private fun reservedList() = Parentheses.parenthesesList + Type.typeNameList
 
-            fun of(stringList: List<String>): Either<TokenizeError, Reserved> {
-                val value = stringList
-                    .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
-                    .joinToString("")
+            fun of(charList: List<Char>): Either<TokenizeError, Reserved> {
+                fun recurse(string: String): String = when {
+                    string.isEmpty() -> string
+                    else -> {
+                        if (reservedList().contains(string)) string
+                        else recurse(string.dropLast(1))
+                    }
+                }
+
+                val value = charList
+                    .take(reservedList().maxOf { it.length })
+                    .makeString()
+                    .let { recurse(it) }
 
                 return when {
                     isReserved(value) -> {
                         when {
-                            Parentheses.parenthesesList.contains(value) -> Parentheses.of(value)
+                            Parentheses.isParentheses(value) -> Parentheses.of(value)
 
-                            Type.typeNameList.contains(value) -> Type.of(value)
+                            Type.isType(value) -> Type.of(value)
 
                             else -> Either.Left(TokenizeError.NoMatchError(value))
                         }
@@ -89,13 +142,23 @@ sealed class Token(val rawString: String) {
                 }
             }
 
-            fun isReserved(stringList: List<String>): Boolean = reservedList().contains(
-                stringList
-                    .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
-                    .joinToString("")
-            )
+            fun isReserved(charList: List<Char>): Boolean {
+                fun recurse(string: String): Boolean = when {
+                    string.isEmpty() -> false
+                    else -> {
+                        if (reservedList().contains(string)) true
+                        else recurse(string.dropLast(1))
+                    }
+                }
 
-            fun isReserved(string: String): Boolean = isReserved(string.split("").filter { it != "" })
+                val took = charList
+                    .take(reservedList().maxOf { it.length })
+                    .makeString()
+
+                return recurse(took)
+            }
+
+            fun isReserved(reserved: String): Boolean = reservedList().contains(reserved)
         }
 
         sealed class Parentheses(value: String) : Reserved(value) {
@@ -104,8 +167,8 @@ sealed class Token(val rawString: String) {
             }
 
             companion object {
-                val open = "("
-                val close = ")"
+                const val open = "("
+                const val close = ")"
 
                 val parenthesesList = listOf(open, close)
 
@@ -114,6 +177,8 @@ sealed class Token(val rawString: String) {
                     close -> Either.Right(Close)
                     else -> Either.Left(TokenizeError.NoMatchError(value))
                 }
+
+                fun isParentheses(parentheses: String) = parenthesesList.contains(parentheses)
             }
 
             object Open : Parentheses(open)
@@ -130,25 +195,13 @@ sealed class Token(val rawString: String) {
 
                 val typeNameList = listOf(integer)
 
-                fun of(stringList: List<String>): Either<TokenizeError, Reserved> {
-                    val typeName = stringList
-                        .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
-                        .joinToString("")
-
-                    if (!isType(typeName)) return Either.Left(TokenizeError.NoMatchError(typeName))
-
-                    return if (typeName == integer) Either.Right(Integer)
-                    else Either.Left(TokenizeError.NoMatchError(typeName))
+                fun of(value: String): Either<TokenizeError, Reserved> = when {
+                    !isType(value) -> Either.Left(TokenizeError.NoMatchError(value))
+                    value == integer -> Either.Right(Integer)
+                    else -> Either.Left(TokenizeError.NoMatchError(value))
                 }
 
-                fun of(typeName: String) = of(typeName.split("").filter { it != "" })
-
-                fun isType(stringList: List<String>) = stringList
-                    .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
-                    .joinToString("")
-                    .let { typeNameList.contains(it) }
-
-                private fun isType(typeName: String) = typeNameList.contains(typeName)
+                fun isType(typeName: String) = typeNameList.contains(typeName)
             }
 
             object Integer : Type(integer)
@@ -161,16 +214,16 @@ sealed class Token(val rawString: String) {
         }
 
         companion object {
-            fun of(stringList: List<String>): Either<TokenizeError, Id> {
-                val idName = stringList
+            fun of(charList: List<Char>): Either<TokenizeError, Id> {
+                val idName = charList
                     .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
-                    .joinToString("")
+                    .makeString()
 
                 if (!isId(idName)) {
-                    val head = stringList.first()
+                    val head = charList.first()
                     return when {
-                        head.first().isLetter() -> Either.Left(TokenizeError.ReservedError(head))
-                        else -> Either.Left(TokenizeError.StartNumberError(head))
+                        head.isLetter() -> Either.Left(TokenizeError.ReservedError(idName))
+                        else -> Either.Left(TokenizeError.StartNumberError(idName))
                     }
                 }
 
@@ -178,29 +231,26 @@ sealed class Token(val rawString: String) {
                 else Either.Right(Id(idName))
             }
 
-            fun isId(stringList: List<String>): Boolean {
-                val head = stringList.first()
-                if (head.firstOrNull()?.isLetter() != true) return false
+            fun isId(charList: List<Char>): Boolean {
+                val head = charList.firstOrNull()
+                if (head?.isLetter() != true) return false
 
-                val idName = stringList
+                val idName = charList
                     .takeWhile { !WhiteSpace.isWhiteSpace(it) && !Newline.isNewline(it) }
-                    .joinToString("")
 
                 return !Reserved.isReserved(idName)
             }
 
-            private fun isId(idName: String): Boolean = isId(idName.split("")
-                .filter { it != "" }
-            )
+            fun isId(idName: String): Boolean = isId(idName.toCharList())
         }
     }
 
     object WhiteSpace : Token(rawString = " ") {
-        fun isWhiteSpace(value: String) = !Newline.isNewline(value) && value.isBlank()
+        fun isWhiteSpace(char: Char) = !Newline.isNewline(char) && char.toString().isBlank()
     }
 
     object Newline : Token(rawString = "\n") {
-        fun isNewline(value: String) = value == "\n"
+        fun isNewline(value: Char) = value == '\n'
     }
 
     inline fun <reified T : Token> isType(): Boolean = this is T
