@@ -1,6 +1,7 @@
 package front.emitter
 
 import front.lexer.Token
+import util.toCharList
 import java.io.File
 
 class Emitter(private val out: String = "out.c") {
@@ -10,11 +11,13 @@ class Emitter(private val out: String = "out.c") {
             stringList.isEmpty() -> result + printResult()
             else -> {
                 val head = stringList.first()
-                recurse(stringList.drop(1), result + when {
-                    Token.Number.isNumber(head[0].toString()) -> push(head)
-                    Token.Operator.isOperator(head) -> calculate(head)
-                    else -> ""
-                })
+                recurse(
+                    stringList.drop(1), result + when {
+                        Token.Number.isNumber(head.first()) -> push(head)
+                        Token.Operator.isOperator(head.toCharList()) -> calculate(head)
+                        else -> ""
+                    }
+                )
             }
         }
 
