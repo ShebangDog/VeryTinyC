@@ -5,14 +5,10 @@ import front.lexer.Token
 
 object Parser {
 
-    fun parse(tokenList: List<Token>): Either<ParseError, Node> {
-        val head = tokenList.first()
-
-        return when (head) {
-            is Token.Number -> expr(tokenList).first
-            is Token.Reserved.Parentheses.Open -> expr(tokenList).first
-            else -> Either.Left(ParseError.NoMatchError(head.rawString))
-        }
+    fun parse(tokenList: List<Token>) = when (val head = tokenList.first()) {
+        is Token.Number -> expr(tokenList).first
+        is Token.Reserved.Parentheses.Open -> expr(tokenList).first
+        else -> Either.Left(ParseError.NoMatchError(head.rawString))
     }
 
     private fun expr(tokenList: List<Token>): Pair<Either<ParseError, Node>, List<Token>> {
@@ -82,10 +78,7 @@ object Parser {
             }
         }
 
-        val head = tokenList.first()
-        val tail = tokenList.drop(1)
-
-        return when (head) {
+        return when (val head = tokenList.first()) {
             is Token.Number -> {
                 val (left, consumed) = factor(tokenList)
 

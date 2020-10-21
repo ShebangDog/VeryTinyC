@@ -37,7 +37,7 @@ sealed class Token(val rawString: String) {
             private const val assign = "="
             private const val increment = "++"
 
-            val operatorList = listOf(plus, minus, multiple, divide, assign, increment)
+            private val operatorList = listOf(plus, minus, multiple, divide, assign, increment)
 
             fun of(charList: List<Char>): Either<TokenizeError, Operator> {
                 fun recurse(string: String): String = when {
